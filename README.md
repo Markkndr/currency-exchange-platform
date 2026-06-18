@@ -11,7 +11,8 @@ A treasury-grade platform that gives finance teams a real-time, consolidated vie
 <img src="https://img.shields.io/badge/Status-In_Progress-orange?style=for-the-badge" alt="Status: In Progress">
 <img src="https://img.shields.io/badge/Java-21-007396?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21">
 <img src="https://img.shields.io/badge/Spring_Boot-4.0.2-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot 4.0.2">
-<img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
+<img src="https://img.shields.io/badge/JavaFX-21-1283C3?style=for-the-badge&logo=openjdk&logoColor=white" alt="JavaFX 21">
+<img src="https://img.shields.io/badge/H2_Database-09476B?style=for-the-badge&logo=databricks&logoColor=white" alt="H2 Database">
 <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License: MIT">
 
 </div>
@@ -105,7 +106,24 @@ Companies with international operations carry foreign-currency risk on every rec
 
 ## 🏗 Architecture
 
-Key components that make up the platform:
+### Current architecture
+
+What runs today is a **single Spring Boot process that also hosts a JavaFX desktop UI**. The UI controllers call the Spring service layer in-process (no HTTP hop), and the same services are also exposed over a small REST API.
+
+```
+  JavaFX desktop UI (FXML + CSS)
+        │  in-process calls (no HTTP)
+        ▼
+  Spring service layer ──► Spring Data JPA ──► H2 (embedded file DB)
+        ├─► JWT auth (Spring Security)
+        └─► ExchangeRateService ──► exchangerate-api.com  (cached ~hourly)
+        ▲
+  REST API (Spring MVC):  /api/auth/*,  /api/exchange-rates/*
+```
+
+### Target architecture (vision)
+
+The full platform aims for the components below. **None of these are implemented yet** — they describe the roadmap, not the current build.
 
 - **FX rate engine** — integrates multiple market-data providers (e.g. Bloomberg, Reuters, OANDA)
 - **Position aggregation** — pulls and normalizes positions across multiple source systems
@@ -127,15 +145,27 @@ Key components that make up the platform:
 
 ## 🛠 Tech Stack
 
-| Layer | Planned Technology |
-|-------|--------------------|
-| **Backend** | Java 21, Spring Boot 4 |
+**In use today:**
+
+| Layer | Technology |
+|-------|-----------|
+| **Backend** | Java 21, Spring Boot 4.0.2 |
+| **Desktop UI** | JavaFX 21 (FXML + CSS) |
+| **Database** | H2 (embedded, file-based) |
+| **Auth** | JWT-based authentication (jjwt 0.12) + Spring Security |
+| **Live rates** | exchangerate-api.com via `RestTemplate`, cached with Spring Cache |
+
+**Planned (roadmap):**
+
+| Layer | Technology |
+|-------|-----------|
 | **Database** | PostgreSQL (time-series data) |
 | **Caching / live rates** | Redis |
 | **Streaming** | Apache Kafka (FX data pipelines) |
-| **Frontend** | React with D3 / Recharts |
+| **Web frontend** | React with D3 / Recharts |
 | **Real-time** | WebSockets for live updates |
-| **Auth** | JWT-based authentication (jjwt) |
+
+> A PostgreSQL driver is already bundled in the build for the eventual server deployment, but the app runs on H2 by default.
 
 ---
 

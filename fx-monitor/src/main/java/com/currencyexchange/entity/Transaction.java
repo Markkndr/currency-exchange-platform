@@ -46,7 +46,7 @@ public class Transaction {
     private BigDecimal feeAmount = BigDecimal.ZERO;
 
     @Column(nullable = false)
-    private String status; // PENDING, COMPLETED, FAILED, CANCELLED
+    private String status;
 
     @Column(unique = true)
     private String transactionReference;

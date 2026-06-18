@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<HBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.currencyexchange.ui.controller.DashboardController"
+      prefWidth="900" prefHeight="600"
+      styleClass="root-pane">
+
+    <!-- Sidebar -->
+    <VBox styleClass="sidebar" prefWidth="220">
+
+        <VBox styleClass="user-section" spacing="4">
+            <Label fx:id="userNameLabel" styleClass="sidebar-username" text=""/>
+            <Label fx:id="userEmailLabel" styleClass="sidebar-email" text=""/>
+        </VBox>
+
+        <VBox styleClass="nav-section" spacing="2" VBox.vgrow="ALWAYS">
+            <Button text="  Wallets" styleClass="nav-button" maxWidth="Infinity"
+                    alignment="CENTER_LEFT" onAction="#showWallets"/>
+            <Button text="  Transactions" styleClass="nav-button" maxWidth="Infinity"
+                    alignment="CENTER_LEFT" onAction="#showTransactions"/>
+            <Button text="  Profile" styleClass="nav-button" maxWidth="Infinity"
+                    alignment="CENTER_LEFT" onAction="#showProfile"/>
+        </VBox>
+
+        <Button text="  Log Out" styleClass="logout-button" maxWidth="Infinity"
+                alignment="CENTER_LEFT" onAction="#handleLogout"/>
+
+    </VBox>
+
+    <!-- Main Content -->
+    <VBox HBox.hgrow="ALWAYS" styleClass="main-content">
+
+        <HBox styleClass="topbar" alignment="CENTER_LEFT">
+            <Label fx:id="pageTitle" styleClass="page-title" text="My Wallets"/>
+        </HBox>
+
+        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="content-scroll">
+            <VBox fx:id="contentArea" styleClass="content-area" spacing="16"/>
+        </ScrollPane>
+
+    </VBox>
+</HBox>

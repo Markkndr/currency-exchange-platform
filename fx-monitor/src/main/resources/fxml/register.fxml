@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.currencyexchange.ui.controller.RegisterController"
+      styleClass="root-pane"
+      alignment="CENTER"
+      prefWidth="420" prefHeight="600">
+
+    <VBox styleClass="auth-card" spacing="13" maxWidth="340.0" alignment="TOP_CENTER">
+
+        <Label text="Create Account" styleClass="app-title"/>
+        <Label text="Join FX Monitor today" styleClass="subtitle"/>
+
+        <VBox spacing="5">
+            <Label text="FULL NAME" styleClass="field-label"/>
+            <TextField fx:id="fullNameField" promptText="Your full name" styleClass="input-field"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="EMAIL" styleClass="field-label"/>
+            <TextField fx:id="emailField" promptText="you@example.com" styleClass="input-field"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="PASSWORD" styleClass="field-label"/>
+            <PasswordField fx:id="passwordField" promptText="Create a password" styleClass="input-field"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="CONFIRM PASSWORD" styleClass="field-label"/>
+            <PasswordField fx:id="confirmPasswordField" promptText="Confirm your password" styleClass="input-field"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="PHONE (optional)" styleClass="field-label"/>
+            <TextField fx:id="phoneField" promptText="+1 234 567 8900" styleClass="input-field"/>
+        </VBox>
+
+        <VBox spacing="5">
+            <Label text="COUNTRY (optional)" styleClass="field-label"/>
+            <TextField fx:id="countryField" promptText="e.g. United Kingdom" styleClass="input-field"/>
+        </VBox>
+
+        <Label fx:id="errorLabel" styleClass="error-label" wrapText="true"/>
+
+        <Button fx:id="registerButton" text="Create Account" styleClass="primary-button"
+                maxWidth="Infinity" onAction="#handleRegister"/>
+
+        <HBox alignment="CENTER" spacing="4">
+            <Label text="Already have an account?" styleClass="muted-text"/>
+            <Hyperlink text="Sign In" styleClass="link-text" onAction="#navigateToLogin"/>
+        </HBox>
+
+    </VBox>
+</VBox>

@@ -14,6 +14,13 @@ public class SceneNavigator {
     public static void navigate(Node sourceNode, String fxmlPath,
                                 int width, int height,
                                 ApplicationContext context) throws IOException {
+        navigate(sourceNode, fxmlPath, width, height, context, false);
+    }
+
+    public static void navigate(Node sourceNode, String fxmlPath,
+                                int width, int height,
+                                ApplicationContext context,
+                                boolean resizable) throws IOException {
         FXMLLoader loader = new FXMLLoader(SceneNavigator.class.getResource(fxmlPath));
         loader.setControllerFactory(context::getBean);
         Parent root = loader.load();
@@ -24,8 +31,13 @@ public class SceneNavigator {
             SceneNavigator.class.getResource("/css/styles.css").toExternalForm()
         );
 
+        stage.setResizable(resizable);
         stage.setScene(scene);
         stage.sizeToScene();
+        if (resizable) {
+            stage.setMinWidth(700);
+            stage.setMinHeight(500);
+        }
         stage.centerOnScreen();
     }
 }

@@ -60,7 +60,7 @@ public class LoginController {
                 Platform.runLater(() -> {
                     try {
                         SceneNavigator.navigate(emailField, "/fxml/dashboard.fxml",
-                                900, 600, applicationContext);
+                                900, 600, applicationContext, true);
                     } catch (Exception e) {
                         showError("Failed to load dashboard.");
                     }

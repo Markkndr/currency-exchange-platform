@@ -7,8 +7,8 @@
       prefWidth="900" prefHeight="600"
       styleClass="root-pane">
 
-    <!-- Sidebar -->
-    <VBox styleClass="sidebar" prefWidth="220">
+    <!-- Sidebar: fixed width, full height -->
+    <VBox styleClass="sidebar" prefWidth="220" maxWidth="220">
 
         <VBox styleClass="user-section" spacing="4">
             <Label fx:id="userNameLabel" styleClass="sidebar-username" text=""/>
@@ -29,12 +29,15 @@
 
     </VBox>
 
-    <!-- Main Content -->
+    <!-- Main Content: grows to fill all remaining space -->
     <VBox HBox.hgrow="ALWAYS" styleClass="main-content">
 
-        <HBox styleClass="topbar" alignment="CENTER_LEFT">
+        <HBox styleClass="topbar" alignment="CENTER_LEFT" maxWidth="Infinity">
             <Label fx:id="pageTitle" styleClass="page-title" text="My Wallets"/>
         </HBox>
+
+        <!-- Live rates strip -->
+        <FlowPane fx:id="ratesPane" styleClass="rates-strip" hgap="12" vgap="8"/>
 
         <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="content-scroll">
             <VBox fx:id="contentArea" styleClass="content-area" spacing="16"/>

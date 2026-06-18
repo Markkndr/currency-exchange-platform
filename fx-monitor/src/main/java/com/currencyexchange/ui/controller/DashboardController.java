@@ -1,11 +1,14 @@
 package com.currencyexchange.ui.controller;
 
 import com.currencyexchange.dto.auth.AuthResponseDTO;
+import com.currencyexchange.dto.exchange.ExchangeRateDTO;
 import com.currencyexchange.entity.Wallet;
 import com.currencyexchange.repository.WalletRepository;
 import com.currencyexchange.service.AuthService;
+import com.currencyexchange.service.ExchangeRateService;
 import com.currencyexchange.ui.util.SceneNavigator;
 import com.currencyexchange.ui.util.SessionManager;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -15,24 +18,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Component
 public class DashboardController {
 
-    @Autowired
-    private WalletRepository walletRepository;
+    private static final String[] WATCHED_CURRENCIES = {"EUR", "USD", "JPY", "GBP", "CNY"};
 
-    @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private ApplicationContext applicationContext;
+    @Autowired private WalletRepository walletRepository;
+    @Autowired private AuthService authService;
+    @Autowired private ExchangeRateService exchangeRateService;
+    @Autowired private ApplicationContext applicationContext;
 
     @FXML private Label userNameLabel;
     @FXML private Label userEmailLabel;
     @FXML private Label pageTitle;
     @FXML private VBox contentArea;
+    @FXML private FlowPane ratesPane;
 
     @FXML
     public void initialize() {
@@ -42,6 +46,64 @@ public class DashboardController {
             userEmailLabel.setText(session.getEmail());
         }
         showWallets();
+        loadExchangeRates();
+    }
+
+    private void loadExchangeRates() {
+        Label loading = new Label("Loading rates...");
+        loading.getStyleClass().add("muted-text");
+        ratesPane.getChildren().setAll(loading);
+
+        Thread t = new Thread(() -> {
+            try {
+                ExchangeRateDTO rates = exchangeRateService.getRates("USD");
+                Platform.runLater(() -> displayRates(rates));
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    Label err = new Label("Rates unavailable");
+                    err.getStyleClass().add("muted-text");
+                    ratesPane.getChildren().setAll(err);
+                });
+            }
+        }, "rate-loader");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void displayRates(ExchangeRateDTO rates) {
+        ratesPane.getChildren().clear();
+        for (String currency : WATCHED_CURRENCIES) {
+            BigDecimal rate = rates.getRates().get(currency);
+            if (rate != null) {
+                ratesPane.getChildren().add(buildRateCard(currency, rate));
+            }
+        }
+    }
+
+    private VBox buildRateCard(String currency, BigDecimal rate) {
+        VBox card = new VBox(3);
+        card.getStyleClass().add("rate-card");
+
+        Label currencyLabel = new Label(currency);
+        currencyLabel.getStyleClass().add("rate-currency");
+
+        Label rateLabel = new Label();
+        rateLabel.getStyleClass().add("rate-value");
+
+        Label descLabel = new Label();
+        descLabel.getStyleClass().add("rate-description");
+
+        if ("USD".equals(currency)) {
+            rateLabel.setText("BASE");
+            descLabel.setText("reference");
+        } else {
+            int scale = "JPY".equals(currency) ? 2 : 4;
+            rateLabel.setText(rate.setScale(scale, RoundingMode.HALF_UP).toPlainString());
+            descLabel.setText("per 1 USD");
+        }
+
+        card.getChildren().addAll(currencyLabel, rateLabel, descLabel);
+        return card;
     }
 
     @FXML

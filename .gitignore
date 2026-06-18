@@ -1,0 +1,32 @@
+# Build output
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local H2 database files
+*.mv.db
+*.trace.db
+
+# Local environment / secrets
+.env
+*.local
+
+# Claude Code artifacts
+MEMORY.md
+.claude/memory/

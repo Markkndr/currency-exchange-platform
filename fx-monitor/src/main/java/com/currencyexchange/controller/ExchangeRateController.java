@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @RestController
-@RequestMapping("/exchange-rates")
+@RequestMapping("/api/exchange-rates")
 public class ExchangeRateController {
 
     @Autowired

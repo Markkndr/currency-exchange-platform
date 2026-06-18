@@ -22,20 +22,20 @@ spring:
 
   security:
     jwt:
-      secret: your-super-secret-jwt-key-make-it-long-and-secure-at-least-256-bits-this-is-important
+      # Provide JWT_SECRET via environment variable in any real deployment.
+      # The fallback below is for local development only and must be >= 256 bits for HS512.
+      secret: ${JWT_SECRET:dev-only-insecure-secret-change-me-make-it-long-and-secure-at-least-256-bits}
       expiration: 900000 # 15-minute Access Token
       refresh-expiration: 604800000 # 7-day Refresh Token
 
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 # Forex API Configuration
 forex:
   api:
     url: https://api.exchangerate-api.com/v4/latest
-    key: your-api-key-here
+    key: ${FOREX_API_KEY:}
     update-interval: 3600 # 1 hour
     timeout: 5000
 

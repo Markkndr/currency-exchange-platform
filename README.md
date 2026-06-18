@@ -141,13 +141,15 @@ Key components that make up the platform:
 
 ## ✅ Current Status
 
-The foundational backend layer is in place. Implemented so far:
+The foundational layer is in place. Implemented so far:
 
 - 🔐 **Authentication & accounts** — register, login, JWT access + refresh tokens, logout, change password, email verification, and profile retrieval
 - 👤 **User domain** — user entity with KYC status, daily exchange limits, and 2FA fields
 - 👛 **Wallet & transaction model** — multi-currency wallets and a transaction ledger (exchange, deposit, withdrawal, transfer) with fee and exchange-rate tracking
 - 🛡️ **Security layer** — Spring Security with a JWT authentication filter and token provider
-- 🗄️ **Persistence** — Spring Data JPA repositories over PostgreSQL
+- 💱 **Live exchange rates** — external rate-feed integration (exchangerate-api.com) with caching and a `/api/exchange-rates` API
+- 🖥️ **Desktop UI** — a JavaFX front-end (login, register, dashboard with wallet and live-rate cards) that calls the service layer in-process
+- 🗄️ **Persistence** — Spring Data JPA repositories over an embedded H2 database (a PostgreSQL driver is bundled for a future server deployment)
 
 The exposure, hedging, rate-feed, and analytics phases described in the [roadmap](#-roadmap) are the next milestones.
 
@@ -173,20 +175,26 @@ The exposure, hedging, rate-feed, and analytics phases described in the [roadmap
 ### Prerequisites
 
 - **Java 21+** and **Maven**
-- A running **PostgreSQL** instance
+- No database setup required — the app uses an embedded **H2** file database by default (stored under `~/.fx-monitor/`). PostgreSQL is optional and only needed for a future server deployment.
 
-### Run the backend
+### Run the desktop app
 
 ```bash
 git clone https://github.com/Markkndr/currency-exchange-platform.git
-cd currency-exchange-platform/currency-exchange
+cd currency-exchange-platform/fx-monitor
 
-./mvnw spring-boot:run
+# Launch the JavaFX desktop UI (also boots the Spring context)
+mvn javafx:run
 ```
 
-Configure your database connection and JWT secret via environment variables or `application.properties` before running.
+Before running, set a signing key via the `JWT_SECRET` environment variable (≥ 256 bits for HS512). If unset, a clearly-labelled insecure dev fallback is used so local runs work out of the box:
 
-> 🔐 Keep secrets out of version control — use environment variables for credentials and signing keys.
+```bash
+export JWT_SECRET="your-long-random-secret-at-least-256-bits"
+export FOREX_API_KEY="optional-exchange-rate-api-key"
+```
+
+> 🔐 Keep secrets out of version control — always provide `JWT_SECRET` via the environment in any real deployment.
 
 ---
 
@@ -194,16 +202,22 @@ Configure your database connection and JWT secret via environment variables or `
 
 ```
 currency-exchange-platform/
-├── currency-exchange/
-│   └── src/main/java/com/currencyexchange/
-│       ├── config/         # Security configuration
-│       ├── controller/     # REST controllers (Auth)
-│       ├── dto/            # Request/response DTOs
-│       ├── entity/         # User, Wallet, Transaction
-│       ├── exception/      # Domain-specific exceptions
-│       ├── repository/     # JPA repositories
-│       ├── security/       # JWT filter & token provider
-│       └── service/        # Auth & user services
+├── fx-monitor/
+│   └── src/main/
+│       ├── java/com/currencyexchange/
+│       │   ├── config/         # Security & RestTemplate configuration
+│       │   ├── controller/     # REST controllers (Auth, ExchangeRate)
+│       │   ├── dto/            # Request/response DTOs
+│       │   ├── entity/         # User, Wallet, Transaction
+│       │   ├── exception/      # Domain-specific exceptions
+│       │   ├── repository/     # JPA repositories
+│       │   ├── security/       # JWT filter & token provider
+│       │   ├── service/        # Auth, user & exchange-rate services
+│       │   └── ui/             # JavaFX app, controllers & view helpers
+│       └── resources/
+│           ├── fxml/           # JavaFX view layouts
+│           ├── css/            # UI styles
+│           └── application.yml # App configuration
 └── LICENSE
 ```
 

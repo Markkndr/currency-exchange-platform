@@ -72,6 +72,9 @@ public class AuthService {
 
     @Transactional
     public AuthResponseDTO login(LoginRequestDTO request) {
+        // Only credential failures should be flattened into a generic message.
+        // Anything else (disabled account, lookup/DB errors) must surface as-is.
+        String email;
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -79,38 +82,37 @@ public class AuthService {
                             request.getPassword()
                     )
             );
-
-            String email = authentication.getName();
-            User user = userService.getUserByEmail(email);
-
-            if (!user.getIsEmailVerified()) {
-                log.warn("Login attempt from unverified email: {}", email);
-            }
-
-            if (!user.getIsActive()) {
-                throw new AccountDisabledException("Account is disabled");
-            }
-
-            userService.updateLastLoginTime(user.getId());
-
-            String accessToken = tokenProvider.generateAccessToken(user.getEmail(), user.getId());
-            String refreshToken = tokenProvider.generateRefreshToken(user.getEmail(), user.getId());
-
-            log.info("User logged in successfully: {}", email);
-
-            return AuthResponseDTO.builder()
-                    .userId(user.getId())
-                    .email(user.getEmail())
-                    .fullName(user.getFullName())
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .expiresIn(tokenProvider.getRemainingTime(accessToken))
-                    .build();
-
-        } catch (Exception ex) {
-            log.error("Login failed: {}", ex.getMessage());
+            email = authentication.getName();
+        } catch (org.springframework.security.core.AuthenticationException ex) {
+            log.warn("Login failed for {}: {}", request.getEmail(), ex.getMessage());
             throw new AuthenticationException("Invalid email or password");
         }
+
+        User user = userService.getUserByEmail(email);
+
+        if (!user.getIsActive()) {
+            throw new AccountDisabledException("Account is disabled");
+        }
+
+        // Email verification is not yet enforced because no email-delivery channel
+        // exists to send the verification link. Enforce here (throwing
+        // EmailNotVerifiedException) once delivery is wired up.
+
+        userService.updateLastLoginTime(user.getId());
+
+        String accessToken = tokenProvider.generateAccessToken(user.getEmail(), user.getId());
+        String refreshToken = tokenProvider.generateRefreshToken(user.getEmail(), user.getId());
+
+        log.info("User logged in successfully: {}", email);
+
+        return AuthResponseDTO.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .expiresIn(tokenProvider.getRemainingTime(accessToken))
+                .build();
     }
 
     @Transactional
@@ -178,6 +180,9 @@ public class AuthService {
         userService.verifyEmail(user.getId());
         log.info("Email verified for user: {}", user.getId());
     }
+    // Stateless JWT: there is no server-side session to invalidate, so logout is a
+    // no-op beyond audit logging. To support real revocation, persist a token
+    // blacklist (e.g. by jti) and check it in JwtAuthenticationFilter.
     public void logout(Long userId) {
         log.info("User logged out: {}", userId);
     }

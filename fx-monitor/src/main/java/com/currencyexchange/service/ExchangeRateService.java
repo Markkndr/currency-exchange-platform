@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
-
 @Service
 @Slf4j
 public class ExchangeRateService {
@@ -44,15 +42,6 @@ public class ExchangeRateService {
             log.error("Failed to fetch exchange rates for {}: {}", base, e.getMessage());
             throw new ExchangeRateException("Failed to fetch exchange rates: " + e.getMessage());
         }
-    }
-
-    public BigDecimal getRate(String from, String to) {
-        ExchangeRateDTO dto = getRates(from.toUpperCase());
-        BigDecimal rate = dto.getRates().get(to.toUpperCase());
-        if (rate == null) {
-            throw new ExchangeRateException("No rate found for currency: " + to.toUpperCase());
-        }
-        return rate;
     }
 
     @CacheEvict(value = "exchangeRates", allEntries = true)

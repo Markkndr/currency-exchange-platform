@@ -58,7 +58,7 @@ public class JwtTokenProvider {
                 .subject(subject)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .signWith(getSigningKey(), Jwts.SIG.HS512)
                 .compact();
     }
 
@@ -68,10 +68,10 @@ public class JwtTokenProvider {
 
     public Long getUserIdFromToken(String token) {
         Object userId = getAllClaimsFromToken(token).get("userId");
-        if (userId instanceof Integer) {
-            return ((Integer) userId).longValue();
+        if (userId instanceof Number) {
+            return ((Number) userId).longValue();
         }
-        return (Long) userId;
+        return null;
     }
 
     public String getTokenType(String token) {
@@ -81,11 +81,11 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .setSigningKey(getSigningKey())
+                    .verifyWith(getSigningKey())
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return true;
-        } catch (SecurityException e) {
+        } catch (io.jsonwebtoken.security.SecurityException e) {
             log.error("Invalid JWT signature: {}", e.getMessage());
         } catch (MalformedJwtException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
@@ -109,9 +109,9 @@ public class JwtTokenProvider {
 
     public Claims getAllClaimsFromToken(String token) {
         return Jwts.parser()
-                .setSigningKey(getSigningKey())
+                .verifyWith(getSigningKey())
                 .build()
-                .parseClaimsJws(token)
+                .parseSignedClaims(token)
                 .getPayload();
     }
 

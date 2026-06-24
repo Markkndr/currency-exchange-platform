@@ -2,17 +2,22 @@ package com.currencyexchange.ui.controller;
 
 import com.currencyexchange.dto.auth.AuthResponseDTO;
 import com.currencyexchange.dto.exchange.ExchangeRateDTO;
+import com.currencyexchange.dto.transactions.TransactionDTO;
 import com.currencyexchange.entity.Wallet;
 import com.currencyexchange.repository.WalletRepository;
 import com.currencyexchange.service.AuthService;
 import com.currencyexchange.service.ExchangeRateService;
+import com.currencyexchange.service.TransactionService;
 import com.currencyexchange.ui.util.SceneNavigator;
 import com.currencyexchange.ui.util.SessionManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -20,16 +25,23 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class DashboardController {
 
     private static final String[] WATCHED_CURRENCIES = {"EUR", "USD", "JPY", "GBP", "CNY"};
 
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
+
     @Autowired private WalletRepository walletRepository;
     @Autowired private AuthService authService;
     @Autowired private ExchangeRateService exchangeRateService;
+    @Autowired private TransactionService transactionService;
     @Autowired private ApplicationContext applicationContext;
 
     @FXML private Label userNameLabel;
@@ -136,9 +148,132 @@ public class DashboardController {
     private void showTransactions() {
         pageTitle.setText("Transactions");
         contentArea.getChildren().clear();
-        Label placeholder = new Label("Transaction history coming soon.");
-        placeholder.getStyleClass().add("muted-text");
-        contentArea.getChildren().add(placeholder);
+
+        AuthResponseDTO session = SessionManager.getSession();
+        if (session == null) return;
+
+        Label loading = new Label("Loading transactions...");
+        loading.getStyleClass().add("muted-text");
+        contentArea.getChildren().add(loading);
+
+        Long userId = session.getUserId();
+        Thread t = new Thread(() -> {
+            try {
+                Map<Long, String> walletCurrencies = walletRepository.findByUserId(userId).stream()
+                        .collect(Collectors.toMap(Wallet::getId, Wallet::getCurrency));
+                List<TransactionDTO> transactions = transactionService.getUserTransactions(userId);
+                Platform.runLater(() -> displayTransactions(transactions, walletCurrencies));
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    contentArea.getChildren().clear();
+                    Label err = new Label("Transactions unavailable.");
+                    err.getStyleClass().add("muted-text");
+                    contentArea.getChildren().add(err);
+                });
+            }
+        }, "transaction-loader");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void displayTransactions(List<TransactionDTO> transactions, Map<Long, String> walletCurrencies) {
+        contentArea.getChildren().clear();
+
+        if (transactions.isEmpty()) {
+            Label empty = new Label("No transactions yet. Your activity will appear here.");
+            empty.getStyleClass().add("muted-text");
+            contentArea.getChildren().add(empty);
+            return;
+        }
+
+        VBox table = new VBox();
+        table.getStyleClass().add("txn-table");
+        table.getChildren().add(buildTransactionHeader());
+        for (TransactionDTO txn : transactions) {
+            table.getChildren().add(buildTransactionRow(txn, walletCurrencies));
+        }
+        contentArea.getChildren().add(table);
+    }
+
+    private HBox buildTransactionHeader() {
+        HBox header = new HBox();
+        header.getStyleClass().add("txn-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getChildren().addAll(
+                headerCell("DATE", 150),
+                headerCell("TYPE", 110),
+                headerCell("REFERENCE", 180),
+                headerCell("AMOUNT", 0),
+                headerCell("STATUS", 110));
+        return header;
+    }
+
+    private Label headerCell(String text, double width) {
+        Label label = new Label(text);
+        label.getStyleClass().add("txn-header-cell");
+        if (width > 0) {
+            label.setMinWidth(width);
+            label.setPrefWidth(width);
+        } else {
+            label.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(label, Priority.ALWAYS);
+        }
+        return label;
+    }
+
+    private HBox buildTransactionRow(TransactionDTO txn, Map<Long, String> walletCurrencies) {
+        HBox row = new HBox();
+        row.getStyleClass().add("txn-row");
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Label date = new Label(txn.getCreatedAt() != null
+                ? txn.getCreatedAt().format(DATE_FORMAT) : "—");
+        date.getStyleClass().add("txn-cell");
+        date.setMinWidth(150);
+        date.setPrefWidth(150);
+
+        Label type = new Label(txn.getTransactionType());
+        type.getStyleClass().addAll("txn-badge", "txn-type-" + txn.getTransactionType().toLowerCase());
+        HBox typeBox = new HBox(type);
+        typeBox.setMinWidth(110);
+        typeBox.setPrefWidth(110);
+        typeBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label reference = new Label(txn.getTransactionReference() != null
+                ? txn.getTransactionReference() : "—");
+        reference.getStyleClass().add("txn-cell-muted");
+        reference.setMinWidth(180);
+        reference.setPrefWidth(180);
+
+        Label amount = new Label(formatAmount(txn, walletCurrencies));
+        amount.getStyleClass().add("txn-cell");
+        amount.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(amount, Priority.ALWAYS);
+
+        Label status = new Label(txn.getStatus());
+        status.getStyleClass().addAll("txn-badge", "txn-status-" + txn.getStatus().toLowerCase());
+        HBox statusBox = new HBox(status);
+        statusBox.setMinWidth(110);
+        statusBox.setPrefWidth(110);
+        statusBox.setAlignment(Pos.CENTER_LEFT);
+
+        row.getChildren().addAll(date, typeBox, reference, amount, statusBox);
+        return row;
+    }
+
+    private String formatAmount(TransactionDTO txn, Map<Long, String> walletCurrencies) {
+        String fromCcy = walletCurrencies.get(txn.getFromWalletId());
+        String toCcy = walletCurrencies.get(txn.getToWalletId());
+
+        String from = txn.getFromAmount() != null
+                ? txn.getFromAmount().toPlainString() + (fromCcy != null ? " " + fromCcy : "") : null;
+        String to = txn.getToAmount() != null
+                ? txn.getToAmount().toPlainString() + (toCcy != null ? " " + toCcy : "") : null;
+
+        if (from != null && to != null) {
+            return from + "  →  " + to;
+        }
+        return from != null ? from : (to != null ? to : "—");
     }
 
     @FXML

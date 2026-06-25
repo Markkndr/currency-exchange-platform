@@ -20,6 +20,8 @@
                     alignment="CENTER_LEFT" onAction="#showWallets"/>
             <Button text="  Transactions" styleClass="nav-button" maxWidth="Infinity"
                     alignment="CENTER_LEFT" onAction="#showTransactions"/>
+            <Button text="  Statistics" styleClass="nav-button" maxWidth="Infinity"
+                    alignment="CENTER_LEFT" onAction="#showStatistics"/>
             <Button text="  Profile" styleClass="nav-button" maxWidth="Infinity"
                     alignment="CENTER_LEFT" onAction="#showProfile"/>
         </VBox>

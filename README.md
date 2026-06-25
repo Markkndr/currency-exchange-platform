@@ -234,8 +234,8 @@ The first slice of **exposure tracking** (net exposure & home-currency valuation
 ### Run the desktop app
 
 ```bash
-git clone https://github.com/Markkndr/currency-exchange-platform.git
-cd currency-exchange-platform/fx-monitor
+git clone https://github.com/Markkndr/fx-monitor.git
+cd fx-monitor/fx-monitor
 
 # Launch the JavaFX desktop UI (also boots the Spring context)
 mvn javafx:run

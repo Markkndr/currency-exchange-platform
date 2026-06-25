@@ -176,12 +176,14 @@ The foundational layer is in place. Implemented so far:
 - 🔐 **Authentication & accounts** — register, login, JWT access + refresh tokens, logout, change password, email verification, and profile retrieval
 - 👤 **User domain** — user entity with KYC status, daily exchange limits, and 2FA fields
 - 👛 **Wallet & transaction model** — multi-currency wallets and a transaction ledger (exchange, deposit, withdrawal, transfer) with fee and exchange-rate tracking
+- 💸 **Transactions** — a user-scoped transaction API (`/api/transactions`) and a transaction-history view in the dashboard
+- 📊 **Portfolio statistics** — net exposure per currency (netting & aggregation) valued in a home currency via live rates, exposed at `/api/statistics/portfolio` with a statistics dashboard tab showing total portfolio value and each currency's share
 - 🛡️ **Security layer** — Spring Security with a JWT authentication filter and token provider
 - 💱 **Live exchange rates** — external rate-feed integration (exchangerate-api.com) with caching and a `/api/exchange-rates` API
-- 🖥️ **Desktop UI** — a JavaFX front-end (login, register, dashboard with wallet and live-rate cards) that calls the service layer in-process
+- 🖥️ **Desktop UI** — a JavaFX front-end (login, register, dashboard with wallet, live-rate, transaction-history, and statistics tabs) that calls the service layer in-process
 - 🗄️ **Persistence** — Spring Data JPA repositories over an embedded H2 database (a PostgreSQL driver is bundled for a future server deployment)
 
-The exposure, hedging, rate-feed, and analytics phases described in the [roadmap](#-roadmap) are the next milestones.
+The first slice of **exposure tracking** (net exposure & home-currency valuation) has landed; hedging, multi-provider rate feeds, and the advanced-analytics phases described in the [roadmap](#-roadmap) are the next milestones.
 
 > 📝 Note: the current data model began as a wallet/exchange foundation; the entities will evolve toward the treasury-exposure model (positions, hedges, forward contracts) as Phase 1 lands.
 
@@ -197,6 +199,28 @@ The exposure, hedging, rate-feed, and analytics phases described in the [roadmap
 | `GET` | `/verify-email` | Verify email via token |
 | `POST` | `/logout` | Log out |
 | `GET` | `/health` | Service health check |
+
+### Implemented API — `/api/exchange-rates`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/{base}` | Latest exchange rates for a base currency (cached) |
+
+### Implemented API — `/api/transactions`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | List the current user's transactions (optional `?type=` filter) |
+| `GET` | `/{id}` | Get one of the current user's transactions |
+| `POST` | `/` | Create a transaction |
+
+### Implemented API — `/api/statistics`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/portfolio` | Net exposure per currency and total portfolio value, valued in `?home=` (defaults to USD) |
+
+> All `/api/transactions` and `/api/statistics` endpoints are scoped to the authenticated user — a user can only ever see their own data.
 
 ---
 
@@ -236,13 +260,13 @@ currency-exchange-platform/
 │   └── src/main/
 │       ├── java/com/currencyexchange/
 │       │   ├── config/         # Security & RestTemplate configuration
-│       │   ├── controller/     # REST controllers (Auth, ExchangeRate)
+│       │   ├── controller/     # REST controllers (Auth, ExchangeRate, Transaction, Statistics)
 │       │   ├── dto/            # Request/response DTOs
 │       │   ├── entity/         # User, Wallet, Transaction
 │       │   ├── exception/      # Domain-specific exceptions
 │       │   ├── repository/     # JPA repositories
 │       │   ├── security/       # JWT filter & token provider
-│       │   ├── service/        # Auth, user & exchange-rate services
+│       │   ├── service/        # Auth, user, exchange-rate, transaction & portfolio-statistics services
 │       │   └── ui/             # JavaFX app, controllers & view helpers
 │       └── resources/
 │           ├── fxml/           # JavaFX view layouts
